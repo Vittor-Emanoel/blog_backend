@@ -5,9 +5,12 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require ('jsonwebtoken')
 const cookieParser = require('cookie-parser')
-
+const multer = require('multer')
+const uploadMiddleware = multer({dest: './src/uploads'})
+const fs = require('fs')
 //Model
 const UserModel = require('./src/models/User')
+const PostModel = require('./src/models/Post')
 
 //PASSOS: 
 
@@ -88,6 +91,23 @@ app.get('/profile', (req, res) => {
 app.post('/logout', (req, res) => {
   res.cookie('token', '', { sameSite: 'none', secure: true}).json('Saiu!')
 
+})
+
+app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
+  const {originalname, path} = req.file
+
+  const parts =  originalname.split('.')
+  const ext = parts[parts.length - 1]
+  const newPath = path+'.'+ext
+  console.log(newPath)
+  fs.renameSync(path, newPath)
+
+  const {title, summary, content} = req.body
+  const post = await PostModel.create({
+    title, summary, content, cover: newPath
+ })
+
+  res.json({post})
 })
 
 app.listen(3333, () =>  {
