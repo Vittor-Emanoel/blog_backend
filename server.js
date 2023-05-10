@@ -102,7 +102,6 @@ app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
   const parts =  originalname.split('.')
   const ext = parts[parts.length - 1]
   const newPath = path+'.'+ext
-  console.log(newPath)
   fs.renameSync(path, newPath)
 
   const { token } = req.cookies
