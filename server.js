@@ -6,11 +6,12 @@ const bcrypt = require('bcrypt')
 const jwt = require ('jsonwebtoken')
 const cookieParser = require('cookie-parser')
 const multer = require('multer')
-const uploadMiddleware = multer({dest: './src/uploads'})
+const uploadMiddleware = multer({ dest: 'uploads/' });
 const fs = require('fs')
 //Model
 const UserModel = require('./src/models/User')
 const PostModel = require('./src/models/Post')
+const path = require('path')
 
 //PASSOS: 
 
@@ -33,6 +34,7 @@ app.use((req, res, next) => {
 
 app.use(express.json())
 app.use(cookieParser())
+app.use('/uploads', express.static(__dirname + '/uploads'));
 
 mongoose.connect('mongodb+srv://vittor:300321@blog.wbbvdgw.mongodb.net/?retryWrites=true&w=majority')
 .then(() => console.log('Conectou ao db'))
@@ -93,6 +95,7 @@ app.post('/logout', (req, res) => {
 
 })
 
+
 app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
   const {originalname, path} = req.file
 
@@ -102,12 +105,29 @@ app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
   console.log(newPath)
   fs.renameSync(path, newPath)
 
-  const {title, summary, content} = req.body
-  const post = await PostModel.create({
-    title, summary, content, cover: newPath
+  const { token } = req.cookies
+  jwt.verify(token, secret, {}, async (err, info) => {
+    if (err) throw err;
+    const {title, summary, content} = req.body
+    const post = await PostModel.create({
+      title, 
+      summary, 
+      content, 
+      cover: newPath, 
+      author: info.id
  })
+  res.json(post)
+})
+});
 
-  res.json({post})
+app.get('/post', async (req, res) => {
+  res.json(
+  await PostModel.find()
+  .populate('author', ['username'])
+  .sort({createdAt: -1})
+  .limit(20)
+  )
+
 })
 
 app.listen(3333, () =>  {
