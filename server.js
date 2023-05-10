@@ -19,7 +19,7 @@ const salt = bcrypt.genSaltSync(10)
 const secret = 'sd432654gtdsfw4343242adwtg34sda'
 
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1:5173')
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173')
   res.setHeader('Access-Control-Allow-Methods', '*')
   res.setHeader('Access-Control-Allow-Headers', 'Origin, Content-Type, X-Auth-Token')
   res.setHeader('Access-Control-Max-Age', '10')
@@ -58,16 +58,17 @@ app.post('/login', async (req, res) => {
 
         const passOk =  bcrypt.compareSync(password, user.password)
 
-        if(passOk) {
-          jwt.sign({username,id:user._id}, secret, {}, (err, token) => {
+        if (passOk) {
+          jwt.sign({username,id:user._id}, secret, {}, (err,token) => {
             if (err) throw err;
-            res.cookie('token', token, { sameSite: 'none', secure: true}).json('Logado!')
-          } )
-
+            res.cookie('token', token).json({
+              id:user._id,
+              username,
+            });
+          });
         } else {
-          return res.status(400).json({messageError: 'senha incorreta'})
+          res.status(400).json('wrong credentials');
         }
-
     } catch (error) {
       return res.status(400).json({messageError: error})
     }
